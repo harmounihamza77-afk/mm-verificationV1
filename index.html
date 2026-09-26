@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Media & Minds — Verification</title>
 
 <style>
@@ -32,15 +33,23 @@ body {
     letter-spacing: 2px;
 }
 
-.verified {
+.badge {
     display: inline-block;
     margin-top: 25px;
     padding: 8px 15px;
     border-radius: 20px;
-    background: #e7f7ed;
-    color: #177245;
     font-size: 13px;
     font-weight: bold;
+}
+
+.verified {
+    background: #e7f7ed;
+    color: #177245;
+}
+
+.invalid {
+    background: #fde8e8;
+    color: #b42318;
 }
 
 h1 {
@@ -71,6 +80,8 @@ h1 {
 
 .value {
     font-weight: bold;
+    text-align: right;
+    max-width: 60%;
 }
 
 .footer {
@@ -85,49 +96,115 @@ h1 {
 
 <div class="card">
 
-    <div class="club">
-        MEDIA & MINDS
+    <div class="club">MEDIA & MINDS</div>
+
+    <div id="badge" class="badge">
+        VERIFYING...
     </div>
 
-    <div class="verified">
-        ✓ VERIFIED MEMBER
+    <h1 id="title">Checking membership</h1>
+
+    <div id="description" class="description">
+        Please wait...
     </div>
 
-    <h1>Active Member</h1>
-
-    <div class="description">
-        This membership has been verified.
-    </div>
-
-    <div class="info">
-
-        <div class="row">
-            <span class="label">Public ID</span>
-            <span class="value">MM/26/001</span>
-        </div>
-
-        <div class="row">
-            <span class="label">Name</span>
-            <span class="value">Test Member</span>
-        </div>
-
-        <div class="row">
-            <span class="label">Branch</span>
-            <span class="value">English Studies</span>
-        </div>
-
-        <div class="row">
-            <span class="label">Status</span>
-            <span class="value">ACTIVE</span>
-        </div>
-
-    </div>
+    <div id="info" class="info"></div>
 
     <div class="footer">
         Where creativity meets analysis.
     </div>
 
 </div>
+
+<script>
+
+const API_URL = "https://mm-verfication.harmounihamza77.workers.dev";
+
+const params = new URLSearchParams(window.location.search);
+const token = params.get("token");
+
+const badge = document.getElementById("badge");
+const title = document.getElementById("title");
+const description = document.getElementById("description");
+const info = document.getElementById("info");
+
+function showInvalid(message) {
+
+    badge.textContent = "✕ NOT VERIFIED";
+    badge.className = "badge invalid";
+
+    title.textContent = "Verification Failed";
+
+    description.textContent = message;
+
+    info.innerHTML = "";
+}
+
+function showMember(member) {
+
+    badge.textContent = "✓ VERIFIED MEMBER";
+    badge.className = "badge verified";
+
+    title.textContent = member.status;
+
+    description.textContent =
+        "This membership has been verified.";
+
+    info.innerHTML = `
+        <div class="row">
+            <span class="label">Public ID</span>
+            <span class="value">${member.public_id}</span>
+        </div>
+
+        <div class="row">
+            <span class="label">Name</span>
+            <span class="value">${member.name}</span>
+        </div>
+
+        <div class="row">
+            <span class="label">Branch</span>
+            <span class="value">${member.branch}</span>
+        </div>
+
+        <div class="row">
+            <span class="label">Status</span>
+            <span class="value">${member.status}</span>
+        </div>
+    `;
+}
+
+async function verifyMember() {
+
+    if (!token) {
+        showInvalid("No verification token was provided.");
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/verify?token=${encodeURIComponent(token)}`
+        );
+
+        const data = await response.json();
+
+        if (data.verified) {
+            showMember(data.member);
+        } else {
+            showInvalid(data.message || "Member not found.");
+        }
+
+    } catch (error) {
+
+        showInvalid(
+            "Verification service is temporarily unavailable."
+        );
+    }
+}
+
+verifyMember();
+
+</script>
 
 </body>
 </html>
